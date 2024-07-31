@@ -6,7 +6,7 @@ This application originated from a demo project located at https://github.com/ca
 
 
 ## Requirements
-- .NET 6
+- .NET 8
 
 
 ## Getting started
