@@ -80,7 +80,7 @@ namespace ElasticShardSqlUtil
                 ConsoleUtils.WriteInfo($"No configuration value provided for 'SqlAuthenticationMethod'. Defaulting SqlAuthenticationMethod to 'SqlPassword'.");
             }
 
-            if (sqlAuthenticationMethod == "SqlPassword")
+            if (sqlAuthenticationMethod.Equals("SqlPassword", StringComparison.OrdinalIgnoreCase))
             {
                 sqlConnectionString = GetSqlPasswordCredentialsConnectionString();
             }
