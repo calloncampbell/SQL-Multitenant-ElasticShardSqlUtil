@@ -1,4 +1,5 @@
 ﻿using ElasticShardSqlUtil.Models;
+using ElasticShardSqlUtil.Utils;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -70,9 +71,102 @@ namespace ElasticShardSqlUtil
         /// </summary>
         public static string GetConnectionString(string serverName, string database)
         {
-            SqlConnectionStringBuilder connStr = new SqlConnectionStringBuilder(GetCredentialsConnectionString());
+            string sqlAuthenticationMethod = Config["SqlAuthenticationMethod"];
+            var sqlConnectionString = string.Empty;
+
+            if (string.IsNullOrEmpty(sqlAuthenticationMethod))
+            {
+                sqlAuthenticationMethod = "SqlPassword";
+                ConsoleUtils.WriteInfo($"No configuration value provided for 'SqlAuthenticationMethod'. Defaulting SqlAuthenticationMethod to 'SqlPassword'.");
+            }
+
+            if (sqlAuthenticationMethod == "SqlPassword")
+            {
+                sqlConnectionString = GetSqlPasswordCredentialsConnectionString();
+            }
+            else if (sqlAuthenticationMethod == "ActiveDirectoryIntegrated")
+            {
+                sqlConnectionString = GetActiveDirectoryConnectionString(SqlAuthenticationMethod.ActiveDirectoryIntegrated);
+            }
+            else if (sqlAuthenticationMethod == "ActiveDirectoryManagedIdentity")
+            {
+                sqlConnectionString = GetActiveDirectoryConnectionString(SqlAuthenticationMethod.ActiveDirectoryManagedIdentity);
+            }
+            else if (sqlAuthenticationMethod == "ActiveDirectoryServicePrincipal")
+            {
+                sqlConnectionString = GetActiveDirectoryConnectionString(SqlAuthenticationMethod.ActiveDirectoryServicePrincipal);
+            }
+            else
+            {
+                throw new InvalidOperationException("Invalid SqlAuthenticationMethod specified in 'appsettings.json'. Currently supported methods (SqlPassword | ActiveDirectoryIntegrated | ActiveDirectoryManagedIdentity | ActiveDirectoryServicePrincipal)");
+            }
+
+            SqlConnectionStringBuilder connStr = new SqlConnectionStringBuilder(sqlConnectionString);
             connStr.DataSource = serverName;
             connStr.InitialCatalog = database;
+            return connStr.ToString();
+        }
+
+        /// <summary>
+        /// Returns a connection string to use for Data-Dependent Routing and Multi-Shard Query,
+        /// which does not contain DataSource or InitialCatalog.
+        /// </summary>
+        public static string GetSqlPasswordCredentialsConnectionString()
+        {
+            // Get Username and password from the appsettings.json file. If they don't exist, default to string.Empty.
+            string userId = Config["SqlUsername"] ?? string.Empty;
+            string password = Config["SqlPassword"] ?? string.Empty;
+
+            // Get Integrated Security from the app.config file. 
+            // If it exists, then parse it (throw exception on failure), otherwise default to false.
+            string integratedSecurityString = Config["IntegratedSecurity"];
+            bool integratedSecurity = integratedSecurityString != null && bool.Parse(integratedSecurityString);
+
+            SqlConnectionStringBuilder connStr = new SqlConnectionStringBuilder
+            {
+                // DDR and MSQ require credentials to be set
+                UserID = userId,
+                Password = password,
+                IntegratedSecurity = integratedSecurity,
+                ApplicationName = "DniElasticSqlTool",
+                ConnectTimeout = 30
+
+                // DataSource and InitialCatalog cannot be set for DDR and MSQ APIs, because these APIs will
+                // determine the DataSource and InitialCatalog for you.
+                //
+                // DDR also does not support the ConnectRetryCount keyword introduced in .NET 4.5.1, because it
+                // would prevent the API from being able to correctly kill connections when mappings are switched
+                // offline.
+                //
+                // Other SqlClient ConnectionString keywords are supported.
+            };
+            return connStr.ToString();
+        }
+
+        /// <summary>
+        /// Returns a connection string to use for Data-Dependent Routing and Multi-Shard Query,
+        /// </summary>
+        /// <param name="authenticationMethod"></param>
+        /// <returns></returns>
+        public static string GetActiveDirectoryConnectionString(SqlAuthenticationMethod authenticationMethod)
+        {
+            SqlConnectionStringBuilder connStr = new SqlConnectionStringBuilder
+            {
+                // DDR and MSQ require credentials to be set
+                Authentication = authenticationMethod,
+                Encrypt = true,
+                ApplicationName = "DniElasticSqlTool",
+                ConnectTimeout = 30
+
+                // DataSource and InitialCatalog cannot be set for DDR and MSQ APIs, because these APIs will
+                // determine the DataSource and InitialCatalog for you.
+                //
+                // DDR also does not support the ConnectRetryCount keyword introduced in .NET 4.5.1, because it
+                // would prevent the API from being able to correctly kill connections when mappings are switched
+                // offline.
+                //
+                // Other SqlClient ConnectionString keywords are supported.
+            };
             return connStr.ToString();
         }
 
