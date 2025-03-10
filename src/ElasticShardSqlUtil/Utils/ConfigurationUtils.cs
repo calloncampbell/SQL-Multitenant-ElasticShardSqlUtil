@@ -84,15 +84,15 @@ namespace ElasticShardSqlUtil
             {
                 sqlConnectionString = GetSqlPasswordCredentialsConnectionString();
             }
-            else if (sqlAuthenticationMethod == "ActiveDirectoryIntegrated")
+            else if (sqlAuthenticationMethod.Equals("ActiveDirectoryIntegrated", StringComparison.OrdinalIgnoreCase))
             {
                 sqlConnectionString = GetActiveDirectoryConnectionString(SqlAuthenticationMethod.ActiveDirectoryIntegrated);
             }
-            else if (sqlAuthenticationMethod == "ActiveDirectoryManagedIdentity")
+            else if (sqlAuthenticationMethod.Equals("ActiveDirectoryManagedIdentity", StringComparison.OrdinalIgnoreCase))
             {
                 sqlConnectionString = GetActiveDirectoryConnectionString(SqlAuthenticationMethod.ActiveDirectoryManagedIdentity);
             }
-            else if (sqlAuthenticationMethod == "ActiveDirectoryServicePrincipal")
+            else if (sqlAuthenticationMethod.Equals("ActiveDirectoryServicePrincipal", StringComparison.OrdinalIgnoreCase))
             {
                 sqlConnectionString = GetActiveDirectoryConnectionString(SqlAuthenticationMethod.ActiveDirectoryServicePrincipal);
             }
