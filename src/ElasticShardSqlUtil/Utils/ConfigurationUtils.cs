@@ -98,7 +98,7 @@ namespace ElasticShardSqlUtil
             }
             else
             {
-                throw new InvalidOperationException("Invalid SqlAuthenticationMethod specified in 'appsettings.json'. Currently supported methods (SqlPassword | ActiveDirectoryIntegrated | ActiveDirectoryManagedIdentity | ActiveDirectoryServicePrincipal)");
+                throw new InvalidOperationException($"Invalid SqlAuthenticationMethod '{sqlAuthenticationMethod}' specified in 'appsettings.json'. Currently supported methods are: SqlPassword, ActiveDirectoryIntegrated, ActiveDirectoryManagedIdentity, ActiveDirectoryServicePrincipal.");
             }
 
             SqlConnectionStringBuilder connStr = new SqlConnectionStringBuilder(sqlConnectionString);
